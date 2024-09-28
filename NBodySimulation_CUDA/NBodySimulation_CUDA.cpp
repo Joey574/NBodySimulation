@@ -7,7 +7,6 @@
 #include <GLFW/glfw3.h>
 
 #include "sim.cuh"
-//#include "cuda_update.cu"
 
 const float PI = 3.1415926f;
 const float TAU = 6.2831853f;
