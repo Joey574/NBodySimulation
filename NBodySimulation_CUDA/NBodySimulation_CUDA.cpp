@@ -11,15 +11,16 @@
 const float PI = 3.1415926f;
 const float TAU = 6.2831853f;
 const float DT = 0.00001f;
-const float MIN_DISTANCE = 0.000001f;
+const float MIN_DISTANCE = 0.001f;
 
 const int width = 720;
 const int height = 720;
 
-const int number_bodies = 20000;
+const int number_bodies = 10000;
 
 float zoom = 1.0f;
-
+float x_offset = 0.0f;
+float y_offset = 0.0f;
 
 struct simulation {
 
@@ -30,18 +31,18 @@ struct simulation {
 
         std::uniform_real_distribution<float>vel(0, 0.5f);
         std::normal_distribution<float>pos(0.0f, 0.5f);
-        std::normal_distribution<float>mass(0.005f, 0.05f);
+        std::normal_distribution<float>mass(0.001f, 0.025f);
 
         bodies = (float*)calloc(n * 7, sizeof(float));
 
-        for (size_t i = 1; i < n; i++) {
+        for (size_t i = 0; i < n; i++) {
 
             float x = pos(gen);
             float y = pos(gen);
 
             float temp = vel(gen) * TAU;
             float d_x = std::cos(temp);
-            float d_y = std::sin(temp) * pos(gen);
+            float d_y = std::sin(temp) * (pos(gen) * 2.0f);
 
             // set pos
             bodies[i * 7] = x; bodies[i * 7 + 1] = y;
@@ -50,8 +51,11 @@ struct simulation {
             bodies[i * 7 + 2] = d_x; bodies[i * 7 + 3] = d_y;
 
             // set mass
-            bodies[i * 7 + 6] = 0.001f + std::abs(mass(gen) / 2.0f);
+            bodies[i * 7 + 6] = 0.0001f + std::abs(mass(gen) / 2.0f);
         }
+        
+        bodies[0] = 0.0f; bodies[1] = 0.0f;
+        bodies[6] = 0.75f;
 
         cudaMalloc(&d_data, n * 7 * sizeof(float));
         cudaMemcpy(d_data, bodies, n * 7 * sizeof(float), cudaMemcpyHostToDevice);
@@ -95,6 +99,23 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 
     zoom = std::max(zoom, 0.001f);
 }
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+
+    const float offset_speed = 0.05f;
+
+    if (key == GLFW_KEY_W) {
+        y_offset -= offset_speed;
+    }
+    if (key == GLFW_KEY_A) {
+        x_offset += offset_speed;
+    }
+    if (key == GLFW_KEY_S) {
+        y_offset += offset_speed;
+    }
+    if (key == GLFW_KEY_D) {
+        x_offset -= offset_speed;
+    }        
+}
 
 int main()
 {
@@ -117,6 +138,7 @@ int main()
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
     glfwSetScrollCallback(window, scroll_callback);
+    glfwSetKeyCallback(window, key_callback);
 
     double sum = 0.0;
     size_t count = 0;
@@ -154,7 +176,17 @@ void render_data(float* bodies, size_t n) {
     glColor3f(1.0f, 1.0f, 1.0f);
 
     for (int i = 0; i < n; i++) {
-        draw_circle(bodies[i * 7] * zoom, bodies[i * 7 + 1] * zoom, (std::log(bodies[i * 7 + 6] + 1.0f) / 20.0f) * zoom);
+
+        float final_x = (bodies[i * 7] * zoom) + x_offset;
+        float final_y = (bodies[i * 7 + 1] * zoom) + y_offset;
+
+        float final_r = (std::log(bodies[i * 7 + 6] + 1.0f) / 20.0f) * zoom;
+        
+        draw_circle(final_x, final_y, final_r);
+
+        //if (final_x >= -1.0f && final_x <= 1.0f && final_y >= -1.0f && final_y <= 1.0f) {
+        //
+        //}
     }
 }
 
