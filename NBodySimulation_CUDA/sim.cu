@@ -7,20 +7,24 @@ __global__ void compute_bodies(float* bodies, int n, float min) {
 		float p1[2] = { bodies[i * 7], bodies[i * 7 + 1] };
 		float m1 = bodies[i * 7 + 6];
 
-		for (int j = i + 1; j < n; j++) {
+		for (int j = 0; j < n; j++) {
+			if (j != i) {
+				float p2[2] = { bodies[j * 7], bodies[j * 7 + 1] };
+				float m2 = bodies[j * 7 + 6];
 
-			float p2[2] = { bodies[j * 7], bodies[j * 7 + 1] };
-			float m2 = bodies[j * 7 + 6];
+				// -> calculate x, y distance between bodies
+				float r[2] = { p2[0] - p1[0], p2[1] - p1[1] };
 
-			float r[2] = { p2[0] - p1[0], p2[1] - p1[1] };
+				// -> calculate dist^2
+				float mag_sq = (r[0] * r[0]) + (r[1] * r[1]);
 
-			float mag_sq = (r[0] * r[0]) + (r[1] * r[1]);
-			float tmp = fmaxf(mag_sq, min) * sqrtf(mag_sq);
+				// -> calculate dist
+				float mag = sqrtf(mag_sq);
 
-			float d_acc[2] = { r[0] / tmp, r[1] / tmp };
+				float temp[2] = { r[0] / (fmaxf(mag_sq, min) * mag), r[1] / (fmaxf(mag_sq, min) * mag) };
 
-			bodies[i * 7 + 4] += m2 * d_acc[0]; bodies[i * 7 + 5] += m2 * d_acc[1];
-			bodies[j * 7 + 4] -= m1 * d_acc[0]; bodies[j * 7 + 5] -= m1 * d_acc[1];
+				bodies[i * 7 + 4] += m2 * temp[0]; bodies[i * 7 + 5] += m2 * temp[1];
+			}
 		}
 	}
 }
