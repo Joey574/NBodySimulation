@@ -3,38 +3,36 @@
 #include <chrono>
 #include <random>
 #include <string>
+#include <immintrin.h>
 #include <GLFW/glfw3.h>
-
-#include "cuda_update.cuh"
-//#include "cuda_update.cu"
 
 const float PI = 3.1415926f;
 const float TAU = 6.2831853f;
-
 const float DT = 0.00001f;
 const float MIN_DISTANCE = 0.000001f;
 
 const int width = 720;
 const int height = 720;
 
-const int number_bodies = 2000;
+const int number_bodies = 1000;
+
+float zoom = 1.0f;
+
 
 struct simulation {
 
     simulation() : bodies(nullptr), n(0) {}
 
     simulation(size_t size, int seed) : n(size) {
-
-        srand(seed);
         std::default_random_engine gen(seed);
 
         std::uniform_real_distribution<float>vel(0, 0.5f);
-        std::normal_distribution<float>pos(0.0f, 0.2f);
+        std::normal_distribution<float>pos(0.0f, 0.5f);
         std::normal_distribution<float>mass(0.005f, 0.05f);
 
         bodies = (float*)calloc(n * 7, sizeof(float));
 
-        for (size_t i = 0; i < n; i++) {
+        for (size_t i = 1; i < n; i++) {
 
             float x = pos(gen);
             float y = pos(gen);
@@ -56,7 +54,7 @@ struct simulation {
 
     void update() {
 
-        #pragma omp parallel for
+        //#pragma omp parallel for
         for (size_t i = 0; i < n; i++) {
             float p1[2] = { bodies[i * 7], bodies[i * 7 + 1] };
             float m1 = bodies[i * 7 + 6];
@@ -66,30 +64,17 @@ struct simulation {
                 float m2 = bodies[j * 7 + 6];
 
                 float r[2] = { p2[0] - p1[0], p2[1] - p1[1] };
+
                 float mag_sq = (r[0] * r[0]) + (r[1] * r[1]);
                 float temp = std::max(mag_sq, MIN_DISTANCE) * std::sqrt(mag_sq);
 
                 float d_acc[2] = { r[0] / temp, r[1] / temp };
 
-                bodies[i * 7 + 4] += m2 * d_acc[0]; bodies[i * 7 + 5] += m2 * d_acc[1];
                 bodies[j * 7 + 4] -= m1 * d_acc[0]; bodies[j * 7 + 5] -= m1 * d_acc[1];
+                bodies[i * 7 + 4] += m2 * d_acc[0]; bodies[i * 7 + 5] += m2 * d_acc[1];
+                
             }
         }
-
-        //float* d_data;
-
-        //dim3 dim_block(8, 1, 1);
-        //dim3 dim_grid(ceil(n / 8), 1, 1);
-
-        //cudaMalloc(&d_data, n * 7 * sizeof(float));
-        //cudaMemcpy(d_data, bodies, n * 7 * sizeof(float), cudaMemcpyHostToDevice);
-
-        //call_compute(d_data, n, dim_grid, dim_block, MIN_DISTANCE);
-        //call_update(d_data, n, dim_grid, dim_block, DT);
-
-        //// copy data back to display
-        //cudaMemcpy(bodies, d_data, n * 7 * sizeof(float), cudaMemcpyDeviceToHost);
-        //cudaFree(d_data);
 
         // update bodies
         for (size_t i = 0; i < n; i++) {
@@ -103,12 +88,25 @@ struct simulation {
         free(bodies);
     }
 
-    float* bodies;
+    alignas(64) float* bodies;
     size_t n;
 };
 
 void render_data(float* bodies, size_t n);
 void draw_circle(GLfloat x, GLfloat y, GLfloat r);
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+    const float zoomSpeed = 0.1f;
+
+    if (yoffset > 0) {
+        zoom += zoomSpeed;
+    }
+    else if (yoffset < 0) {
+        zoom -= zoomSpeed;
+    }
+
+    zoom = std::max(zoom, 0.001f);
+}
 
 int main()
 {
@@ -130,6 +128,7 @@ int main()
 
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
+    glfwSetScrollCallback(window, scroll_callback);
 
     double sum = 0.0;
     size_t count = 0;
@@ -144,6 +143,27 @@ int main()
         sum += time.count() / 1000000.00;
         count++;
         std::cout << "\u001b[HAverage: " + std::to_string(sum / count).append("ms  \nLast: ").append(std::to_string(time.count() / 1000000.00)).append("ms  \nCount: ").append(std::to_string(count));
+
+       /* if (count == 5000) {
+            std::cout << "\nx: " << sim.bodies[0] << " :: y: " << sim.bodies[1] << "\n";
+            break;
+        }*/
+        // x: -0.0196998 :: y: 0.0935276
+
+        // x: -0.131784 :: y: -0.00216084
+        // x: -0.128873 :: y: 0.0829565
+        // x: -0.150566 :: y: 0.0408484
+
+        // x: 0.00607099 :: y: 0.0336408
+        // x: -0.0420796 :: y: -0.0626498
+
+        // x: -0.104429 :: y: 0.032543
+        // x: -0.104429 :: y: 0.032543
+
+        // x: -0.146875 :: y: 0.0494664
+        // x: -0.146875 :: y: 0.0494664
+
+        // x: -0.160065 :: y: 0.114138
 
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
@@ -167,7 +187,7 @@ void render_data(float* bodies, size_t n) {
     glColor3f(1.0f, 1.0f, 1.0f);
 
     for (int i = 0; i < n; i++) {
-        draw_circle(bodies[i * 7], bodies[i * 7 + 1], std::log(bodies[i * 7 + 6] + 1.0f) / 20.0f);
+        draw_circle(bodies[i * 7] * zoom, bodies[i * 7 + 1] * zoom, (std::log(bodies[i * 7 + 6] + 1.0f) / 20.0f) * zoom);
     }
 }
 
@@ -181,7 +201,7 @@ void draw_circle(GLfloat x, GLfloat y, GLfloat r) {
         glVertex2f(
             x + (r * std::cos(i * 2.0f * PI / triangles)),
             y + (r * std::sin(i * 2.0f * PI / triangles))
-            );
+        );
     }
 
     glEnd();

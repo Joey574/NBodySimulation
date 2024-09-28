@@ -15,18 +15,8 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="NBodySimulation.cpp">
+    <ClCompile Include="NBodySimulation_CPU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <CudaCompile Include="cuda_update.cu">
-      <Filter>Source Files</Filter>
-    </CudaCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="cuda_update.cuh">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>
