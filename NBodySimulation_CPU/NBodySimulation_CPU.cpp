@@ -6,6 +6,9 @@
 #include <immintrin.h>
 #include <omp.h>
 
+#define NOMINMAX
+#include <Windows.h>
+
 #include <GLFW/glfw3.h>
 #include "../Application/Application.h"
 #include "../Simulation_Initializations/Simulation_Initializations.h"
@@ -24,7 +27,6 @@ struct simulation {
 
     simulation(size_t size, int seed, initialize::init_types type) : n(size) {
         bodies = (float*)calloc(n * 7, sizeof(float));
-        omp_init_lock(&omp_lock);
 
         initialize::initialize_galaxy(type, bodies, n, seed);
     }
@@ -35,12 +37,12 @@ struct simulation {
         for (size_t i = 0; i < n; i++) {
             float p1[2] = { bodies[i * 7], bodies[i * 7 + 1] };
          
+            // still debatable if software prefetching here helps, but it doesnt hurt, and consistently does about 0.03 ms better (laptop)
+            _mm_prefetch(reinterpret_cast<char*>(&bodies[i * 7 + 4]), _MM_HINT_T0);
+            _mm_prefetch(reinterpret_cast<char*>(&bodies[i * 7 + 5]), _MM_HINT_T0);
+
             for (size_t j = 0; j < n; j++) {
                 if (i != j) {
-
-                    //_mm_prefetch(reinterpret_cast<char*>(&bodies[i * 7 + 4]), _MM_HINT_T0);
-                    //_mm_prefetch(reinterpret_cast<char*>(&bodies[i * 7 + 5]), _MM_HINT_T0);
-
                     float p2[2] = { bodies[j * 7], bodies[j * 7 + 1] };
                     float m2 = bodies[j * 7 + 6];
 
@@ -74,14 +76,13 @@ struct simulation {
 
     alignas(64) float* bodies;
     size_t n;
-
-    omp_lock_t omp_lock;
 };
 
 int main()
 {
-    simulation sim(number_bodies, 0, initialize::init_types::video);
+    SetPriorityClass(GetStdHandle, REALTIME_PRIORITY_CLASS);
 
+    simulation sim(number_bodies, 0, initialize::init_types::spiral);
     GLFWwindow* window = create_window(width, height);
 
     double sim_sum = 0.0;
@@ -91,8 +92,7 @@ int main()
     size_t count = 0;
 
     /* Loop until the user closes the window */
-    while (!glfwWindowShouldClose(window))
-    {
+    while (!glfwWindowShouldClose(window)) {
         count++;
 
         auto total_start = std::chrono::high_resolution_clock::now();
