@@ -5,16 +5,17 @@ static float x_offset = 0.0f;
 static float y_offset = 0.0f;
 
 static const float PI = 3.1415926f;
+const int TRIANGLES = 20;
+
 
 // user input
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
-    const float zoomSpeed = 0.1f;
+    const float zoomSpeed = 0.05f;
 
     if (yoffset > 0) {
-        zoom += zoomSpeed;
-    }
-    else if (yoffset < 0) {
-        zoom -= zoomSpeed;
+        zoom += zoomSpeed * zoom;
+    } else if (yoffset < 0) {
+        zoom -= zoomSpeed * zoom;
     }
 
     zoom = std::max(zoom, 0.0001f);
@@ -40,29 +41,38 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 // rendering
 void render_data(float* bodies, size_t n) {
 
-    // set color to white
-    glColor3f(1.0f, 1.0f, 1.0f);
+    float* ren_data = (float*)malloc(n * 3 * sizeof(float));
 
-    for (int i = 0; i < n; i++) {
+    //#pragma omp parallel for
+    for (size_t i = 0; i < n; i++) {
+        ren_data[i * 3] = (bodies[i * 7] * zoom) + x_offset;
+        ren_data[i * 3 + 1] = (bodies[i * 7 + 1] * zoom) + y_offset;
 
-        float final_x = (bodies[i * 7] * zoom) + x_offset;
-        float final_y = (bodies[i * 7 + 1] * zoom) + y_offset;
-
-        float final_r = (std::log(bodies[i * 7 + 6] + 1.0f) / 20.0f) * zoom;
-
-        draw_circle(final_x, final_y, final_r);
+        ren_data[i * 3 + 2] = (std::log(bodies[i * 7 + 6] + 1.0f) / 20.0f) * zoom;
     }
+    for (int i = 0; i < n; i++) {
+        if (
+            ren_data[i * 3] + ren_data[i * 3 + 2] >= -1.0f &&
+            ren_data[i * 3] - ren_data[i * 3 + 2] <= 1.0f &&
+            ren_data[i * 3 + 1] + ren_data[i * 3 + 2] >= -1.0f &&
+            ren_data[i * 3 + 1] - ren_data[i * 3 + 2] <= 1.0f) {
+        
+            draw_circle(ren_data[i * 3], ren_data[i * 3 + 1], ren_data[i * 3 + 2]);
+        }
+    }
+
+    free(ren_data);
 }
 void draw_circle(GLfloat x, GLfloat y, GLfloat r) {
-    int triangles = 20;
-
+    
     glBegin(GL_TRIANGLE_FAN);
     glVertex2f(x, y);
 
-    for (int i = 0; i <= triangles; i++) {
+    float theta = 2.0f * PI / TRIANGLES;
+    for (int i = 0; i <= TRIANGLES; i++) {
         glVertex2f(
-            x + (r * std::cos(i * 2.0f * PI / triangles)),
-            y + (r * std::sin(i * 2.0f * PI / triangles))
+            x + (r * std::cos(i * theta)),
+            y + (r * std::sin(i * theta))
         );
     }
 
