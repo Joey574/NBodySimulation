@@ -76,13 +76,14 @@ void initialize::spiral_init(float* bodies, size_t n, int seed) {
                 bodies[b_idx * 7] = rot_x + pos(gen);
                 bodies[b_idx * 7 + 1] = rot_y + pos(gen);
 
-                bodies[b_idx * 7 + 6] = 0.01f + std::abs(mass(gen));
+                //bodies[b_idx * 7 + 6] = 0.01f + std::abs(mass(gen));
+                bodies[b_idx * 7 + 6] = 0.05f;
 
-                /*float dx = (-ry * 1.4f) * sinf(angle);
-                float dy = ry * cosf(angle);
+                float dx = sinf(theta);
+                float dy = cosf(theta);
                 
-                bodies[b_idx * 7 + 2] = 5 * -dx;
-                bodies[b_idx * 7 + 3] = 5 * -dy;*/
+                bodies[b_idx * 7 + 2] = dx;
+                bodies[b_idx * 7 + 3] = -dy;
 
                 b_idx++;
             }
@@ -98,9 +99,8 @@ void initialize::spiral_init(float* bodies, size_t n, int seed) {
     bodies[0] = 0.0f;
     bodies[1] = 0.0f;
 
-    //bodies[2] = 0.0f;
-    // i
-    //bodies[3] = 0.0f;
+    bodies[2] = 0.0f;
+    bodies[3] = 0.0f;
 
     bodies[6] = 0.5f;
 }
@@ -125,8 +125,8 @@ void initialize::video_init(float* bodies, size_t n, int seed) {
         r = std::abs(r / 3.0f - 1.0f);
 
         float pos[2] = {
-            cos * std::sqrt((float)n) * r,
-            sin * std::sqrt((float)n) * r
+            cos * std::sqrt((float)n) * 2.0f * r,
+            sin * std::sqrt((float)n) * 2.0f * r
         };
 
         float vel[2] = { sin, -cos };
@@ -159,8 +159,8 @@ void initialize::video_init(float* bodies, size_t n, int seed) {
 
         int j = i - 1;
         while (j >= 0 && bodies[j * 7] * bodies[j * 7] + bodies[j * 7 + 1] * bodies[j * 7 + 1] > val) {
-            //unsorted[j + 1] = unsorted[j];
 
+            //unsorted[j + 1] = unsorted[j];
             bodies[(j + 1) * 7] = bodies[j * 7];
             bodies[(j + 1) * 7 + 1] = bodies[j * 7 + 1];
             bodies[(j + 1) * 7 + 2] = bodies[j * 7 + 2];
@@ -188,4 +188,11 @@ void initialize::video_init(float* bodies, size_t n, int seed) {
         bodies[i * 7 + 2] *= v;
         bodies[i * 7 + 3] *= v;
     }
+
+    bodies[0] = 0.0f;
+    bodies[1] = 0.0f;
+    bodies[2] = 0.0f;
+    bodies[3] = 0.0f;
+
+    bodies[6] = 100.0f;
 }

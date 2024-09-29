@@ -11,8 +11,8 @@
 #include "../Application/Application.h"
 #include "../Simulation_Initializations/Simulation_Initializations.h"
 
-const float DT = 0.00001f;
-const float MIN_DISTANCE = 0.000001f;
+const float DT = 0.0001f;
+const float MIN_DISTANCE = 0.0001f;
 
 const int width = 900;
 const int height = 900;
@@ -55,7 +55,7 @@ struct simulation {
 
 int main()
 {
-    simulation sim(number_bodies, 0, initialize::init_types::spiral);
+    simulation sim(number_bodies, 0, initialize::init_types::video);
 
     GLFWwindow* window = create_window(width, height);
 
