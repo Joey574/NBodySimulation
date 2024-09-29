@@ -15,7 +15,7 @@
 
 
 const float TAU = 6.2831853f;
-const float DT = 0.00001f;
+const float DT = 0.000001f;
 const float MIN_DISTANCE = 0.000001f;
 
 const int width = 720;
