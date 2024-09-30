@@ -34,7 +34,7 @@ struct simulation {
 
 int main()
 {
-    simulation sim(initialize::init_types::video, number_bodies, 0);
+    simulation sim(initialize::init_types::spiral, number_bodies, 0);
 
     GLFWwindow* window = create_window(width, height);
 
