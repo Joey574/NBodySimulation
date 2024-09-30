@@ -63,12 +63,11 @@ int main()
     double ren_sum = 0.0;
     double tot_sum = 0.0;
 
-    size_t count = 0;
+    size_t count = 1;
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
-        count++;
 
         auto total_start = std::chrono::high_resolution_clock::now();
         std::string out = "";
@@ -79,7 +78,8 @@ int main()
         auto sim_time = std::chrono::high_resolution_clock::now() - sim_start;
         sim_sum += sim_time.count() / 1000000.00;
 
-        out.append("\u001b[HFrame: ").append(std::to_string(count)).append("\n\nSim Update:\nAverage: ").append(std::to_string(sim_sum / count)).append(" (ms)   \n");
+        out.append("\u001b[HFrame: ").append(std::to_string(count)).append("\n\nSim Update:\nAverage: ").append(std::to_string(sim_sum / count)).append(" (ms)   \nLast: ").
+            append(std::to_string(sim_time.count() / 1000000.00)).append(" (ms)   \n");
 
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
@@ -100,7 +100,10 @@ int main()
 
         auto total_time = std::chrono::high_resolution_clock::now() - total_start;
         tot_sum += total_time.count() / 1000000.00;
+
         out.append("\nTotal:\nAverage: ").append(std::to_string(tot_sum / count)).append(" (ms)   \n").append("Average FPS: ").append(std::to_string(1000.00 / (tot_sum / count))).append("   \n");
+
+        count++;
 
         std::cout << out;
     }

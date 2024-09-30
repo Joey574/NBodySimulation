@@ -47,14 +47,15 @@ void initialize::cluster_init(float* bodies, size_t n, int seed) {
 void initialize::spiral_init(float* bodies, size_t n, int seed) {
     std::default_random_engine gen(seed);
 
-    std::normal_distribution<float>pos(0.0f, 0.01f);
+    std::normal_distribution<float>pos(0.0f, 0.05f);
     std::normal_distribution<float>mass(0.0f, 0.005f);
 
-    float ry = 0.05f;
-    float angle = 0.0f;
-    float inc = 0.01f;
+    float ry = 0.5f;
+    float rx = 0.5;
+    float rotation = 0.0f;
+    float inc = 0.075f;
 
-    int ellipses = 20;;
+    int ellipses = 25;;
     int segments = 100;
 
     int per_point = n / (segments * ellipses);
@@ -64,11 +65,12 @@ void initialize::spiral_init(float* bodies, size_t n, int seed) {
         for (int i = 0; i < segments; i++) {
 
             float theta = (2.0f * PI * i / (float)segments);
-            float x = 0.0f + (ry * 1.4f) * cos(theta);
+
+            float x = 0.0f + rx * cos(theta);
             float y = 0.0f + ry * sin(theta);
 
-            float rot_x = x * cosf(angle) - y * sinf(angle);
-            float rot_y = x * sinf(angle) + y * cosf(angle);
+            float rot_x = x * cosf(rotation) - y * sinf(rotation);
+            float rot_y = x * sinf(rotation) + y * cosf(rotation);
 
             // generate some # bodies in normal dist. centered at rot_x, rot_y
             for (int j = 0; j < per_point; j++) {
@@ -79,20 +81,32 @@ void initialize::spiral_init(float* bodies, size_t n, int seed) {
                 //bodies[b_idx * 7 + 6] = 0.01f + std::abs(mass(gen));
                 bodies[b_idx * 7 + 6] = 0.05f;
 
-                float dx = sinf(theta);
-                float dy = cosf(theta);
+                float dx = sinf(theta + rotation);
+                float dy = cosf(theta + rotation);
                 
-                bodies[b_idx * 7 + 2] = dx;
-                bodies[b_idx * 7 + 3] = -dy;
+                bodies[b_idx * 7 + 2] = -dx;
+                bodies[b_idx * 7 + 3] = dy;
 
                 b_idx++;
             }
         }
 
-        angle += 0.2f;
+        rotation += 0.35f;
+
         ry += inc;
-        
+        rx += inc * 1.2f;
+
         inc += 0.001f;
+    }
+
+    // sort bodies
+    sort_bodies(bodies, n);
+
+    // scale velocities
+    for (size_t i = 0; i < n; i++) {
+        float v = std::sqrt((float)i / std::sqrt(bodies[i * 7] * bodies[i * 7] + bodies[i * 7 + 1] * bodies[i * 7 + 1]));
+        bodies[i * 7 + 2] *= v;
+        bodies[i * 7 + 3] *= v;
     }
     
     // hardcoded centeral body
@@ -102,7 +116,7 @@ void initialize::spiral_init(float* bodies, size_t n, int seed) {
     bodies[2] = 0.0f;
     bodies[3] = 0.0f;
 
-    bodies[6] = 0.5f;
+    bodies[6] = 50.0f;
 }
 void initialize::video_init(float* bodies, size_t n, int seed) {
     std::default_random_engine gen(seed);
@@ -129,21 +143,30 @@ void initialize::video_init(float* bodies, size_t n, int seed) {
             sin * std::sqrt((float)n) * 2.0f * r
         };
 
-        float vel[2] = { sin, -cos };
-
         // set pos
         bodies[i * 7] = pos[0];
         bodies[i * 7 + 1] = pos[1];
 
         // set vel
-        bodies[i * 7 + 2] = vel[0];
-        bodies[i * 7 + 3] = vel[1];
+        bodies[i * 7 + 2] = sin;
+        bodies[i * 7 + 3] = -cos;
 
         // set mass
         bodies[i * 7 + 6] = 1.5f;
     }
 
     // sort bodies
+    sort_bodies(bodies, n);
+
+    // scale velocities
+    for (size_t i = 0; i < n; i++) {
+        float v = std::sqrt((float)i / std::sqrt(bodies[i * 7] * bodies[i * 7] + bodies[i * 7 + 1] * bodies[i * 7 + 1]));
+        bodies[i * 7 + 2] *= v;
+        bodies[i * 7 + 3] *= v;
+    }
+}
+
+void initialize::sort_bodies(float* bodies, size_t n) {
     for (size_t i = 1; i < n; i++) {
         float val = bodies[i * 7] * bodies[i * 7] + bodies[i * 7 + 1] * bodies[i * 7 + 1];
 
@@ -181,18 +204,4 @@ void initialize::video_init(float* bodies, size_t n, int seed) {
         bodies[(j + 1) * 7 + 5] = tmp[5];
         bodies[(j + 1) * 7 + 6] = tmp[6];
     }
-
-    // scale velocities
-    for (size_t i = 0; i < n; i++) {
-        float v = std::sqrt((float)i / std::sqrt(bodies[i * 7] * bodies[i * 7] + bodies[i * 7 + 1] * bodies[i * 7 + 1]));
-        bodies[i * 7 + 2] *= v;
-        bodies[i * 7 + 3] *= v;
-    }
-
-    bodies[0] = 0.0f;
-    bodies[1] = 0.0f;
-    bodies[2] = 0.0f;
-    bodies[3] = 0.0f;
-
-    bodies[6] = 100.0f;
 }

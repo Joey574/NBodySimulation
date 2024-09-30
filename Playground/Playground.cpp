@@ -35,12 +35,12 @@ int main()
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 
-        float ry = 0.025f;
-        float rx = 0.025;
+        float ry = 0.5f;
+        float rx = 0.5;
         float rotation = 0.0f;
-        float inc = 0.02f;
+        float inc = 0.075f;
 
-        int ellipses = 50;;
+        int ellipses = 25;;
         int segments = 100;
 
         int b_idx = 0;
@@ -49,7 +49,9 @@ int main()
 
             draw_ellipse(0.0f, 0.0f, rx * zoom, ry * zoom, rotation);
 
-            rotation += 0.25f;
+
+            rotation += 0.35f;
+
             ry += inc;
             rx += inc * 1.2f;
 

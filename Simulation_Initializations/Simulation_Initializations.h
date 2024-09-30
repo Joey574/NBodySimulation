@@ -14,4 +14,6 @@ private:
 	static void cluster_init(float* bodies, size_t n, int seed);
 	static void spiral_init(float* bodies, size_t n, int seed);
 	static void video_init(float* bodies, size_t n, int seed);
+
+	static void sort_bodies(float* bodies, size_t n);
 };
