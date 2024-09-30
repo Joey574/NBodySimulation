@@ -8,6 +8,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 // rendering
 void render_data(float* bodies, size_t n);
+void render_data_cuda(float* pos, float* mass, size_t n);
 void draw_circle(GLfloat x, GLfloat y, GLfloat r);
 void draw_ellipse(GLfloat x_c, GLfloat y_c, GLfloat x_r, GLfloat y_r);
 void draw_ellipse(GLfloat x_c, GLfloat y_c, GLfloat x_r, GLfloat y_r, GLfloat rotation);

@@ -50,6 +50,7 @@ struct simulation {
 
     float* d_data;
     float* bodies;
+
     size_t n;
 };
 
