@@ -15,13 +15,13 @@
 
 
 const float TAU = 6.2831853f;
-const float DT = 0.000001f;
+const float DT = 0.0001f;
 const float MIN_DISTANCE = 0.000001f;
 
 const int width = 720;
 const int height = 720;
 
-const int number_bodies = 2000;
+const int number_bodies = 10000;
 
 struct simulation {
 
