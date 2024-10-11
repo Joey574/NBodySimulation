@@ -29,45 +29,12 @@ struct simulation {
         bodies = (float*)calloc(n * 7, sizeof(float));
 
         initialize::initialize_galaxy(type, bodies, n, seed);
+
+        GLuint compute_shader;
     }
 
     void update() {
 
-        #pragma omp parallel for
-        for (size_t i = 0; i < n; i++) {
-            float p1[2] = { bodies[i * 7], bodies[i * 7 + 1] };
-         
-            // still debatable if software prefetching here helps, but it doesnt hurt, and consistently does about 0.03 ms better (laptop)
-            _mm_prefetch(reinterpret_cast<char*>(&bodies[i * 7 + 4]), _MM_HINT_T0);
-            _mm_prefetch(reinterpret_cast<char*>(&bodies[i * 7 + 5]), _MM_HINT_T0);
-
-            for (size_t j = 0; j < n; j++) {
-                if (i != j) {
-                    float p2[2] = { bodies[j * 7], bodies[j * 7 + 1] };
-                    float m2 = bodies[j * 7 + 6];
-
-                    // -> calculate x, y distance between bodies
-                    float r[2] = { p2[0] - p1[0], p2[1] - p1[1] };
-
-                    // -> calculate dist^2
-                    float mag_sq = (r[0] * r[0]) + (r[1] * r[1]);
-
-                    // -> calculate dist
-                    float mag = std::sqrt(mag_sq);
-
-                    float temp[2] = { r[0] / (std::max(mag_sq, MIN_DISTANCE) * mag), r[1] / (std::max(mag_sq, MIN_DISTANCE) * mag) };
-
-                    bodies[i * 7 + 4] += m2 * temp[0]; bodies[i * 7 + 5] += m2 * temp[1];
-                }
-            }
-        }
-
-        // update bodies
-        for (size_t i = 0; i < n; i++) {
-            bodies[i * 7] += bodies[i * 7 + 2] * DT; bodies[i * 7 + 1] += bodies[i * 7 + 3] * DT;
-            bodies[i * 7 + 2] += bodies[i * 7 + 4] * DT; bodies[i * 7 + 3] += bodies[i * 7 + 5] * DT;
-            bodies[i * 7 + 4] = 0.0f; bodies[i * 7 + 5] = 0.0f;
-        }
     }
 
     ~simulation() {
@@ -76,7 +43,9 @@ struct simulation {
 
     alignas(64) float* bodies;
     size_t n;
+
 };
+
 
 int main()
 {
