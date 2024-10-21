@@ -52,7 +52,7 @@ void render_data(float* bodies, size_t n, GLfloat aspect_ratio) {
         ren_data[i * 3] = (bodies[i * 7] * zoom) + x_offset;
         ren_data[i * 3 + 1] = (bodies[i * 7 + 1] * zoom) + y_offset;
 
-        ren_data[i * 3 + 2] = (std::log(bodies[i * 7 + 6] + 1.0f) / 20.0f) * zoom;
+        ren_data[i * 3 + 2] = (std::log(bodies[i * 7 + 6] + 1.0f) / 10.0f) * zoom;
     }
 
     for (int i = 0; i < n; i++) {
