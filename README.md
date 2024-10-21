@@ -1,6 +1,5 @@
 # NBodySimulation
 
-<video width="640" height="480" controls>
-  <source src="https://www.youtube.com/watch?v=r_MUnu_LsIM" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+<iframe width="640" height="480" src="https://www.youtube.com/embed/r_MUnu_LsIM" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+
