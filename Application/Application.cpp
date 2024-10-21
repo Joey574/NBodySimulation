@@ -1,6 +1,6 @@
 #include "Application.h"
 
-static float zoom = 1.0f;
+static float zoom = 0.04f;
 static float x_offset = 0.0f;
 static float y_offset = 0.0f;
 
@@ -16,7 +16,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
         zoom -= zoomSpeed * zoom;
     }
 
-    zoom = std::max(zoom, 0.0001f);
+    zoom = zoom > 0.0001f ? zoom : 0.0001f;
 }
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 
@@ -43,7 +43,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 /// </summary>
 /// <param name="bodies"></param>
 /// <param name="n"></param>
-void render_data(float* bodies, size_t n) {
+void render_data(float* bodies, size_t n, GLfloat aspect_ratio) {
 
     float* ren_data = (float*)malloc(n * 3 * sizeof(float));
 
@@ -65,18 +65,19 @@ void render_data(float* bodies, size_t n) {
             ren_data[i * 3 + 1] + ren_data[i * 3 + 2] >= -1.0f &&
             ren_data[i * 3 + 1] - ren_data[i * 3 + 2] <= 1.0f) {
         
-            draw_circle(ren_data[i * 3], ren_data[i * 3 + 1], ren_data[i * 3 + 2]);
+            draw_circle(ren_data[i * 3], ren_data[i * 3 + 1], ren_data[i * 3 + 2], aspect_ratio);
         }
     }
 
     free(ren_data);
 }
-void draw_circle(GLfloat x, GLfloat y, GLfloat r) {
+void draw_circle(GLfloat x, GLfloat y, GLfloat r, GLfloat aspect_ratio) {
     const __m256 _t = _mm256_set1_ps(2.0f * PI / 23.0f);
 
     const __m256 _r = _mm256_set1_ps(r);
     const __m256 _x = _mm256_set1_ps(x);
     const __m256 _y = _mm256_set1_ps(y);
+    const __m256 _aspect_ratio = _mm256_set1_ps(aspect_ratio);
 
     // const iteration values for triangle fan
     const __m256 _a = { 0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f };
@@ -84,14 +85,14 @@ void draw_circle(GLfloat x, GLfloat y, GLfloat r) {
     const __m256 _c = { 16.0f, 17.0f, 18.0f, 19.0f, 20.0f, 21.0f, 22.0f, 23.0f };
 
     // x values for vertexes
-    __m256 _x1 = _mm256_fmadd_ps(_r, _mm256_cos_ps(_mm256_mul_ps(_t, _a)), _x);
-    __m256 _x2 = _mm256_fmadd_ps(_r, _mm256_cos_ps(_mm256_mul_ps(_t, _b)), _x);
-    __m256 _x3 = _mm256_fmadd_ps(_r, _mm256_cos_ps(_mm256_mul_ps(_t, _c)), _x);
+    const __m256 _x1 = _mm256_fmadd_ps(_r, _mm256_mul_ps(_mm256_cos_ps(_mm256_mul_ps(_t, _a)), _aspect_ratio), _x);
+    const __m256 _x2 = _mm256_fmadd_ps(_r, _mm256_mul_ps(_mm256_cos_ps(_mm256_mul_ps(_t, _b)), _aspect_ratio), _x);
+    const __m256 _x3 = _mm256_fmadd_ps(_r, _mm256_mul_ps(_mm256_cos_ps(_mm256_mul_ps(_t, _c)), _aspect_ratio), _x);
 
     // y values for vertexes
-    __m256 _y1 = _mm256_fmadd_ps(_r, _mm256_sin_ps(_mm256_mul_ps(_t, _a)), _y);
-    __m256 _y2 = _mm256_fmadd_ps(_r, _mm256_sin_ps(_mm256_mul_ps(_t, _b)), _y);
-    __m256 _y3 = _mm256_fmadd_ps(_r, _mm256_sin_ps(_mm256_mul_ps(_t, _c)), _y);
+    const __m256 _y1 = _mm256_fmadd_ps(_r, _mm256_sin_ps(_mm256_mul_ps(_t, _a)), _y);
+    const __m256 _y2 = _mm256_fmadd_ps(_r, _mm256_sin_ps(_mm256_mul_ps(_t, _b)), _y);
+    const __m256 _y3 = _mm256_fmadd_ps(_r, _mm256_sin_ps(_mm256_mul_ps(_t, _c)), _y);
 
     float comp_x[24];
     float comp_y[24];
@@ -153,6 +154,35 @@ void draw_ellipse(GLfloat x_c, GLfloat y_c, GLfloat x_r, GLfloat y_r) {
 
     }
     glEnd();
+}
+
+void take_screenshot(std::string filepath, size_t width, size_t height) {
+    GLubyte* pixels = new GLubyte[3 * width * height];
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+
+    int wideStrLength = MultiByteToWideChar(CP_UTF8, 0, filepath.c_str(), -1, nullptr, 0);
+    std::wstring wideStr(wideStrLength, L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, filepath.c_str(), -1, &wideStr[0], wideStrLength);
+
+    CImage image;
+    image.Create(width, height, 24);
+
+    /*size_t idx = 0;
+    for (size_t y = 0; y < height; y++) {
+        for (size_t x = 0; x < width; x++) {
+            image.SetPixel(x, y, RGB(pixels[idx * 3] * 255.0f, pixels[idx * 3 + 1] * 255.0f, pixels[idx * 3 + 2] * 255.0f));
+            idx++;
+        }
+    }*/
+
+    for (size_t y = 0; y < height; y++) {
+        std::memcpy(image.GetPixelAddress(0, y), &pixels[y * width * 3], width * 3 * sizeof(GLubyte));
+    }
+
+    image.Save(wideStr.c_str(), Gdiplus::ImageFormatBMP);
+    image.Destroy();
+
+    delete[] pixels;
 }
 
 // window creation

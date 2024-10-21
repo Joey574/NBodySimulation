@@ -10,7 +10,7 @@
 const int width = 720;
 const int height = 720;
 
-const int number_bodies = 100000;
+const int number_bodies = 10000;
 
 struct simulation {
     simulation(initialize::init_types type, size_t size, int seed) : n(size) {
@@ -34,7 +34,7 @@ struct simulation {
 
 int main()
 {
-    simulation sim(initialize::init_types::spiral, number_bodies, 0);
+    simulation sim(initialize::init_types::cluster, number_bodies, 0);
 
     GLFWwindow* window = create_window(width, height);
 
