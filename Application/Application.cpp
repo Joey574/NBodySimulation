@@ -72,7 +72,7 @@ void render_data(float* bodies, size_t n, GLfloat aspect_ratio) {
     free(ren_data);
 }
 void draw_circle(GLfloat x, GLfloat y, GLfloat r, GLfloat aspect_ratio) {
-    const __m256 _t = _mm256_set1_ps(2.0f * PI / 23.0f);
+    const __m256 _t = _mm256_set1_ps(PI / 11.5f);
 
     const __m256 _r = _mm256_set1_ps(r);
     const __m256 _x = _mm256_set1_ps(x);
