@@ -15,13 +15,13 @@
 
 
 const float TAU = 6.2831853f;
-const float DT = 0.00001f;
+const float DT = 0.0001f;
 const float MIN_DISTANCE = 0.000001f;
 
-const int width = 1280;
+const int width = 720;
 const int height = 720;
 
-const int number_bodies = 8000;
+const int number_bodies = 10000;
 
 struct simulation {
 
@@ -29,45 +29,12 @@ struct simulation {
         bodies = (float*)calloc(n * 7, sizeof(float));
 
         initialize::initialize_galaxy(type, bodies, n, seed);
+
+        GLuint compute_shader;
     }
 
     void update() {
 
-        #pragma omp parallel for
-        for (size_t i = 0; i < n; i++) {
-            float p1[2] = { bodies[i * 7], bodies[i * 7 + 1] };
-         
-            // still debatable if software prefetching here helps, but it doesnt hurt, and consistently does about 0.03 ms better (laptop)
-            _mm_prefetch(reinterpret_cast<char*>(&bodies[i * 7 + 4]), _MM_HINT_T0);
-            _mm_prefetch(reinterpret_cast<char*>(&bodies[i * 7 + 5]), _MM_HINT_T0);
-
-            for (size_t j = 0; j < n; j++) {
-                if (i != j) {
-                    float p2[2] = { bodies[j * 7], bodies[j * 7 + 1] };
-                    float m2 = bodies[j * 7 + 6];
-
-                    // -> calculate x, y distance between bodies
-                    float r[2] = { p2[0] - p1[0], p2[1] - p1[1] };
-
-                    // -> calculate dist^2
-                    float mag_sq = (r[0] * r[0]) + (r[1] * r[1]);
-
-                    // -> calculate dist
-                    float mag = std::sqrt(mag_sq);
-
-                    float temp[2] = { r[0] / (std::max(mag_sq, MIN_DISTANCE) * mag), r[1] / (std::max(mag_sq, MIN_DISTANCE) * mag) };
-
-                    bodies[i * 7 + 4] += m2 * temp[0]; bodies[i * 7 + 5] += m2 * temp[1];
-                }
-            }
-        }
-
-        // update bodies
-        for (size_t i = 0; i < n; i++) {
-            bodies[i * 7] += bodies[i * 7 + 2] * DT; bodies[i * 7 + 1] += bodies[i * 7 + 3] * DT;
-            bodies[i * 7 + 2] += bodies[i * 7 + 4] * DT; bodies[i * 7 + 3] += bodies[i * 7 + 5] * DT;
-            bodies[i * 7 + 4] = 0.0f; bodies[i * 7 + 5] = 0.0f;
-        }
     }
 
     ~simulation() {
@@ -76,16 +43,16 @@ struct simulation {
 
     alignas(64) float* bodies;
     size_t n;
+
 };
+
 
 int main()
 {
     SetPriorityClass(GetStdHandle, REALTIME_PRIORITY_CLASS);
 
-    simulation sim(number_bodies, 0, initialize::init_types::video);
+    simulation sim(number_bodies, 0, initialize::init_types::spiral);
     GLFWwindow* window = create_window(width, height);
-
-    const float ratio = (float)height / (float)width;
 
     double sim_sum = 0.0;
     double ren_sum = 0.0;
@@ -114,15 +81,11 @@ int main()
 
         // render simulation data
         auto ren_start = std::chrono::high_resolution_clock::now();
-        render_data(sim.bodies, sim.n, ratio);
+        render_data(sim.bodies, sim.n);
         auto ren_time = std::chrono::high_resolution_clock::now() - ren_start;
         ren_sum += ren_time.count() / 1000000.00;
 
         out.append("\nRendering:\nAverage: ").append(std::to_string(ren_sum / count)).append(" (ms)   \n");
-
-        if (count % 100 == 0) {
-            take_screenshot(".\\frames\\frame_" + std::to_string(count).append(".bmp"), width, height);
-        }
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
