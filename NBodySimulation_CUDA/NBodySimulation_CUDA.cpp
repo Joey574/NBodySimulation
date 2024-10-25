@@ -11,13 +11,13 @@
 #include "../Application/Application.h"
 #include "../Simulation_Initializations/Simulation_Initializations.h"
 
-const float DT = 0.0001f;
-const float MIN_DISTANCE = 0.0001f;
+const float DT = 0.000001f;
+const float MIN_DISTANCE = 0.000001f;
 
-const int width = 900;
-const int height = 900;
+const int width = 980;
+const int height = 980;
 
-const int number_bodies = 20000;
+const int number_bodies = 8000;
 
 struct simulation {
 
@@ -60,6 +60,8 @@ int main()
 
     GLFWwindow* window = create_window(width, height);
 
+    const float ratio = (float)height / (float)width;
+
     double sim_sum = 0.0;
     double ren_sum = 0.0;
     double tot_sum = 0.0;
@@ -87,11 +89,15 @@ int main()
 
         // render simulation data
         auto ren_start = std::chrono::high_resolution_clock::now();
-        render_data(sim.bodies, sim.n);
+        render_data(sim.bodies, sim.n, ratio);
         auto ren_time = std::chrono::high_resolution_clock::now() - ren_start;
         ren_sum += ren_time.count() / 1000000.00;
 
         out.append("\nRendering:\nAverage: ").append(std::to_string(ren_sum / count)).append(" (ms)   \n");
+
+        if (count % 500 == 0) {
+            take_screenshot(".\\frames\\frame_" + std::to_string(count).append(".bmp"), width, height);
+        }
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
