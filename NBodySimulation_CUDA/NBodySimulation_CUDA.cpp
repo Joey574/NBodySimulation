@@ -11,7 +11,7 @@
 #include "../Application/Application.h"
 #include "../Simulation_Initializations/Simulation_Initializations.h"
 
-const float DT = 0.000001f;
+const float DT = 0.00001f;
 const float MIN_DISTANCE = 0.000001f;
 
 const int width = 980;
@@ -95,9 +95,9 @@ int main()
 
         out.append("\nRendering:\nAverage: ").append(std::to_string(ren_sum / count)).append(" (ms)   \n");
 
-        if (count % 500 == 0) {
-            take_screenshot(".\\frames\\frame_" + std::to_string(count).append(".bmp"), width, height);
-        }
+        //if (count % 500 == 0) {
+        //    take_screenshot(".\\frames\\frame_" + std::to_string(count).append(".bmp"), width, height);
+        //}
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);

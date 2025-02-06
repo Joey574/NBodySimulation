@@ -34,7 +34,8 @@ struct simulation {
 
 int main()
 {
-    simulation sim(initialize::init_types::cluster, number_bodies, 0);
+    simulation sim(initialize::init_types::spiral, number_bodies, 0);
+    const float ratio = (float)height / (float)width;
 
     GLFWwindow* window = create_window(width, height);
 
@@ -55,7 +56,7 @@ int main()
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 
-        render_data(sim.bodies, sim.n);
+        render_data(sim.bodies, sim.n, ratio);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
